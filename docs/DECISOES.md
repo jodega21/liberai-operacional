@@ -65,3 +65,18 @@ Commits f6afabe (base), bf82331 e 8ba8b24 (db), 2a8e535 (codigo), e55e5d5 (teste
 - Trava do medidor: as funcoes sao do liberai-cadastros (DECISOES LEI3 de la); o teste fica aqui no bloco F de supabase/testes,
   que agora aplica a secao 1 de 20261028140000 e a 20261030130000 do cadastros.
 - Teste: PGlite 147 verificacoes (19 novas), 0 falhas. App: 64 testes (5 novos de paginacao), typecheck, lint e build OK.
+
+### LEI4 — Demonstrativo do morador e resumo do condominio (impressos)
+
+**Decidido em:** 30/10/2026 · **Status:** codigo pronto, nao commitado nem validado no browser. Sem migration.
+
+- Esboco aprovado por Daniel (30/10) com os dados reais do Monte Castelo out/2026; recomendacoes aceitas: D1-A meia folha A4, dois por folha com linha de corte; D2-A todas as unidades com leitura no ciclo fechado, inclusive as que acumulam ("Sem cobranca neste mes"); D3-A historico do ano em barras; D5-A no ciclo fechado, botoes "Demonstrativos" e "Resumo do condominio" e link "Demonstrativo" por unidade (?unidade=).
+- Marca: logo da Libergas com o selo Nacional Gas (arquivo do Project "Marca Principal nacionalgas CMYK", convertido para public/marca-libergas.jpg, 1400 px). Cores da marca fixas no papel (azul #557dbe, laranja #e1a064).
+- Contato (Daniel): WhatsApp (54) 3227-2263 com QR code para conversa direta (https://wa.me/555432272263, public/whatsapp-qr.svg gerado uma vez; conferido lendo o QR da pagina impressa). Icone generico de mensagem ao lado do numero (o simbolo oficial do WhatsApp e marca registrada; se quiser o oficial, usar o arquivo do kit de marca da Meta).
+- Conteudo do morador: leitura anterior (base da cobranca, com a data) e atual, consumo em m3 e kg (fator da central), preco do m3, dias, valor e vencimento; acumulados/em aberto em "Inclui"; condominio que paga (intermediario/basico) mostra "Valor do consumo, rateado pelo condominio", sem vencimento. "Documento informativo, sem valor fiscal" em todas as folhas (risco ANP ja assumido na transicao, KNOWN_ISSUES do cadastros).
+- Resumo do condominio: consumo da central no mes (soma do consumo mensal das unidades) em m3, kg e P45 equivalentes; uma linha por unidade; total cobrado; documento do condominio quando ele paga.
+- Historico do ano = diferenca entre leituras MENSAIS seguidas da unidade, somando medidores trocados (mesma conta do leitura._consumo). Antes de out/2026 reflete a planilha, que repetia o numero do relogio nos meses que acumulavam (barras zeradas e um pico no mes cobrado, ex.: Monte Castelo 101 e 402).
+- Codigo: src/lib/leitura/demonstrativo.ts (puro), carregarDemonstrativos em carregar.ts (paginado), rotas /leitura/ciclo/[id]/demonstrativos e /resumo, A4 retrato so nelas (o faturamento segue em paisagem).
+- Ajustes depois da conversa de Daniel com a operacao (30/10): (1-A) cada barra mostra m3 e o valor do consumo do mes (m3 x preco do m3 da propria cobranca da unidade; sem preco - acumuladas da planilha - o preco mais comum do ciclo, porque na planilha o preco varia por unidade: Monte Castelo set/2026 22,35 e 38,18, Mahe seis precos); mes acumulado com "+" (soma com o seguinte); mes cobrado por valor diferente do proprio consumo com "= total cobrado"; legenda embaixo. Numero do boleto (ou NF-e/recibo) lancado no faturamento aparece abaixo do valor; "Faturado (planilha)" nao aparece.
+- Comunicado aos moradores (primeiro demonstrativo): modelo em PDF (comunicado + demonstrativo de exemplo numa A4) entregue a Daniel para mostrar aos envolvidos; entrar no sistema (opcao A, caixa "Incluir comunicado") fica para depois dessa conversa.
+- Teste: 19 novos (83 no total), typecheck, lint e build OK. Render com dados reais (so leitura) em PDF A4: 8 demonstrativos em 4 folhas, resumo em 1.
