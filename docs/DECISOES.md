@@ -52,3 +52,16 @@ Commits f6afabe (base), bf82331 e 8ba8b24 (db), 2a8e535 (codigo), e55e5d5 (teste
   D5 ciclo com documento nao reabre.
 - Teste: supabase/testes (PGlite) - 128 verificacoes, inclusive o replay do Monte Castelo 2026 (80/80 com a planilha). App: 59
   testes, typecheck, lint e build OK.
+
+### LEI3 — Paginacao das consultas da leitura e teste da trava do medidor
+
+**Decidido em:** 30/10/2026 · **Status:** codigo pronto, nao commitado nem validado no browser.
+
+- Paginacao (opcao A, Daniel 30/10): lerPaginado (src/lib/leitura/paginar.ts), mesmo padrao do liberai-financeiro - pagina de 1.000
+  com ordem total terminando em id. Descartadas: limitar por periodo (unidade sem cobranca ha muito tempo sumiria da conta) e
+  mover para funcoes SQL (migration a mais sem ganho hoje). Paginadas em carregar.ts: ciclos (lista e condominio), saidas, ultimas
+  leituras, cobrancas cobradas, medidores, leituras anteriores e historico de cobrancas. A ordem dos medidores passou a
+  instalado_em, criado_em, id (igual a _base_cobranca).
+- Trava do medidor: as funcoes sao do liberai-cadastros (DECISOES LEI3 de la); o teste fica aqui no bloco F de supabase/testes,
+  que agora aplica a secao 1 de 20261028140000 e a 20261030130000 do cadastros.
+- Teste: PGlite 147 verificacoes (19 novas), 0 falhas. App: 64 testes (5 novos de paginacao), typecheck, lint e build OK.

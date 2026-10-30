@@ -2,7 +2,9 @@
 
 ## [LIMITE] API devolve no maximo 1.000 linhas por consulta (LEI2, 29/10)
 
-**Status:** aberto · **Severidade:** media (cresce com o tempo)
+**Status:** resolvido (LEI3, 30/10) - consultas que crescem paginadas (lib/leitura/paginar.ts) · **Severidade:** media (cresce com o tempo)
+- Conferido no banco em 30/10 (so leitura): sem paginar, leituras e cobrancas devolviam 1.000 de 1.688; paginado, 1.688 sem repetir.
+  Ficaram sem paginar as consultas limitadas pelo numero de unidades (unidades, ocupantes, leituras e cobrancas de UM ciclo).
 - O PostgREST do Supabase corta em 1.000 linhas sem avisar. As consultas de lib/leitura/carregar.ts buscam por condominio/unidades
   sem paginar: hoje a maior (La Citta, ~410 cobrancas) cabe; a La Citta gera ~500 por ano. Caminho: limitar por periodo (ultima
   cobrada para frente) ou paginar.
