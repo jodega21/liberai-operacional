@@ -1,6 +1,7 @@
 import 'server-only';
 import { TENANT_ID } from '@/lib/constants';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { lerPaginado } from './paginar';
 import {
   BUCKET_FOTOS,
   mensagemErro,
@@ -91,13 +92,14 @@ export async function listarCondominios(): Promise<{ ok: true; itens: Condominio
       nomes(db, conds.map((x) => x.cliente_id)),
       unidadesAtivas(db, ids),
       ids.length
-        ? leitura(db).from('ciclos').select('id, condominio_id, referencia, data_leitura, status')
-            .eq('tenant_id', TENANT_ID).in('condominio_id', ids).order('referencia', { ascending: false })
-        : Promise.resolve({ data: [], error: null }),
+        ? lerPaginado<CicloResumo & { condominio_id: string }>((de, ate) => leitura(db).from('ciclos')
+            .select('id, condominio_id, referencia, data_leitura, status')
+            .eq('tenant_id', TENANT_ID).in('condominio_id', ids).order('referencia', { ascending: false }).order('id')
+            .range(de, ate), 'ciclos')
+        : Promise.resolve([]),
     ]);
-    falha('ciclos', cic.error);
     const ultimo = new Map<string, CicloResumo>();
-    for (const x of (cic.data ?? []) as (CicloResumo & { condominio_id: string })[]) {
+    for (const x of cic) {
       if (!ultimo.has(x.condominio_id)) ultimo.set(x.condominio_id, { id: x.id, referencia: x.referencia, data_leitura: x.data_leitura, status: x.status });
     }
     const cicloIds = [...ultimo.values()].map((x) => x.id);
@@ -150,45 +152,43 @@ export async function carregarCondominio(id: string): Promise<{ ok: true; d: Con
     const condominio = await cabecalhoCondominio(db, id);
     if (!condominio) return { ok: true, d: null };
     const [cic, unis] = await Promise.all([
-      leitura(db).from('ciclos').select('id, referencia, data_leitura, status').eq('tenant_id', TENANT_ID)
-        .eq('condominio_id', id).order('referencia', { ascending: false }),
+      lerPaginado<CicloResumo>((de, ate) => leitura(db).from('ciclos').select('id, referencia, data_leitura, status')
+        .eq('tenant_id', TENANT_ID).eq('condominio_id', id).order('referencia', { ascending: false }).order('id')
+        .range(de, ate), 'ciclos'),
       unidadesAtivas(db, [id]),
     ]);
-    falha('ciclos', cic.error);
     const uids = unis.map((u) => u.id);
     const [ocs, meds] = await Promise.all([ocupantesAtuais(db, uids), medidoresAtuais(db, uids)]);
     const sa = uids.length
-      ? await leitura(db).from('cobrancas').select('unidade_id, cliente_id, consumo, valor, leituras(data, valor)')
+      ? await lerPaginado((de, ate) => leitura(db).from('cobrancas').select('unidade_id, cliente_id, consumo, valor, leituras(data, valor)')
           .eq('tenant_id', TENANT_ID).is('ciclo_id', null).in('unidade_id', uids).order('criado_em', { ascending: false })
-      : { data: [], error: null };
-    falha('cobrancas', sa.error);
-    const saidasBrutas = (sa.data ?? []) as unknown as { unidade_id: string; cliente_id: string | null; consumo: unknown; valor: unknown; leituras: { data: string; valor: unknown } | null }[];
+          .order('id').range(de, ate), 'cobrancas')
+      : [];
+    const saidasBrutas = sa as { unidade_id: string; cliente_id: string | null; consumo: unknown; valor: unknown; leituras: { data: string; valor: unknown } | null }[];
 
     // Para a janela de saida: ultima leitura do medidor atual, ultima cobrada e preco de hoje.
     const medIds = [...meds.values()].map((m) => m.id);
     const [ult, cob, primeiros] = await Promise.all([
       medIds.length
-        ? leitura(db).from('leituras').select('medidor_id, valor, data').eq('tenant_id', TENANT_ID).in('medidor_id', medIds)
-            .order('data', { ascending: false })
-        : Promise.resolve({ data: [], error: null }),
+        ? lerPaginado((de, ate) => leitura(db).from('leituras').select('medidor_id, valor, data').eq('tenant_id', TENANT_ID)
+            .in('medidor_id', medIds).order('data', { ascending: false }).order('id').range(de, ate), 'ultimas leituras')
+        : Promise.resolve([]),
       uids.length
-        ? leitura(db).from('cobrancas').select('unidade_id, leituras(medidor_id, valor, data)').eq('tenant_id', TENANT_ID)
-            .eq('situacao', 'cobrar').in('unidade_id', uids)
-        : Promise.resolve({ data: [], error: null }),
+        ? lerPaginado((de, ate) => leitura(db).from('cobrancas').select('unidade_id, leituras(medidor_id, valor, data)')
+            .eq('tenant_id', TENANT_ID).eq('situacao', 'cobrar').in('unidade_id', uids).order('id').range(de, ate), 'cobrancas cobradas')
+        : Promise.resolve([]),
       uids.length
-        ? leitura(db).from('medidores').select('id, unidade_id, instalado_em, leitura_inicial').eq('tenant_id', TENANT_ID)
-            .in('unidade_id', uids).order('instalado_em')
-        : Promise.resolve({ data: [], error: null }),
+        ? lerPaginado((de, ate) => leitura(db).from('medidores').select('id, unidade_id, instalado_em, leitura_inicial')
+            .eq('tenant_id', TENANT_ID).in('unidade_id', uids).order('instalado_em').order('criado_em').order('id')
+            .range(de, ate), 'medidores')
+        : Promise.resolve([]),
     ]);
-    falha('ultimas leituras', ult.error);
-    falha('cobrancas cobradas', cob.error);
-    falha('medidores', primeiros.error);
     const ultimaPorMedidor = new Map<string, { valor: number; data: string }>();
-    for (const x of (ult.data ?? []) as { medidor_id: string; valor: unknown; data: string }[]) {
+    for (const x of ult as { medidor_id: string; valor: unknown; data: string }[]) {
       if (!ultimaPorMedidor.has(x.medidor_id)) ultimaPorMedidor.set(x.medidor_id, { valor: Number(x.valor), data: x.data });
     }
     const cobradaPorUnidade = new Map<string, { medidor_id: string; valor: number; data: string }>();
-    for (const x of (cob.data ?? []) as unknown as { unidade_id: string; leituras: { medidor_id: string; valor: unknown; data: string } | null }[]) {
+    for (const x of cob as { unidade_id: string; leituras: { medidor_id: string; valor: unknown; data: string } | null }[]) {
       if (!x.leituras) continue;
       const atual = cobradaPorUnidade.get(x.unidade_id);
       if (!atual || x.leituras.data > atual.data) {
@@ -196,7 +196,7 @@ export async function carregarCondominio(id: string): Promise<{ ok: true; d: Con
       }
     }
     const primeiroPorUnidade = new Map<string, { id: string; leitura_inicial: number }>();
-    for (const x of (primeiros.data ?? []) as { id: string; unidade_id: string; leitura_inicial: unknown }[]) {
+    for (const x of primeiros as { id: string; unidade_id: string; leitura_inicial: unknown }[]) {
       if (!primeiroPorUnidade.has(x.unidade_id)) primeiroPorUnidade.set(x.unidade_id, { id: x.id, leitura_inicial: Number(x.leitura_inicial) });
     }
     const centrais = [...new Set(unis.map((u) => u.central_id))];
@@ -213,7 +213,7 @@ export async function carregarCondominio(id: string): Promise<{ ok: true; d: Con
       ok: true,
       d: {
         condominio,
-        ciclos: (cic.data ?? []) as CicloResumo[],
+        ciclos: cic,
         unidades: unis
           .map((u) => {
             const med = meds.get(u.id);
@@ -274,13 +274,12 @@ export async function carregarCiclo(id: string): Promise<{ ok: true; d: CicloCom
     // Anterior: ultima leitura do medidor atual fora deste ciclo; sem nenhuma, a inicial.
     const medIds = [...meds.values()].map((m) => m.id);
     const ant = medIds.length
-      ? await leitura(db).from('leituras').select('medidor_id, valor, data').eq('tenant_id', TENANT_ID)
+      ? await lerPaginado((de, ate) => leitura(db).from('leituras').select('medidor_id, valor, data').eq('tenant_id', TENANT_ID)
           .in('medidor_id', medIds).or(`ciclo_id.is.null,ciclo_id.neq.${id}`).lte('data', ci.data_leitura)
-          .order('data', { ascending: false })
-      : { data: [], error: null };
-    falha('leituras anteriores', ant.error);
+          .order('data', { ascending: false }).order('id').range(de, ate), 'leituras anteriores')
+      : [];
     const anterior = new Map<string, { valor: number; data: string }>();
-    for (const x of (ant.data ?? []) as { medidor_id: string; valor: unknown; data: string }[]) {
+    for (const x of ant as { medidor_id: string; valor: unknown; data: string }[]) {
       if (!anterior.has(x.medidor_id)) anterior.set(x.medidor_id, { valor: Number(x.valor), data: x.data });
     }
 
@@ -339,12 +338,12 @@ export async function carregarCiclo(id: string): Promise<{ ok: true; d: CicloCom
 
     // Composicao: meses acumulados desde a ultima cobrada e consumo em aberto levado por esta cobranca.
     const hist = uids.length
-      ? await leitura(db).from('cobrancas').select('id, unidade_id, ciclo_id, situacao, consumo_em_aberto, quitada_por, ciclos(referencia), leituras(data)')
-          .eq('tenant_id', TENANT_ID).in('unidade_id', uids)
-      : { data: [], error: null };
-    falha('historico de cobrancas', hist.error);
+      ? await lerPaginado((de, ate) => leitura(db).from('cobrancas')
+          .select('id, unidade_id, ciclo_id, situacao, consumo_em_aberto, quitada_por, ciclos(referencia), leituras(data)')
+          .eq('tenant_id', TENANT_ID).in('unidade_id', uids).order('id').range(de, ate), 'historico de cobrancas')
+      : [];
     type H = { id: string; unidade_id: string; ciclo_id: string | null; situacao: string; consumo_em_aberto: unknown; quitada_por: string | null; ciclos: { referencia: string } | null; leituras: { data: string } | null };
-    const historico = ((hist.data ?? []) as unknown as H[]).sort((a, b) => (a.leituras?.data ?? '').localeCompare(b.leituras?.data ?? ''));
+    const historico = (hist as H[]).sort((a, b) => (a.leituras?.data ?? '').localeCompare(b.leituras?.data ?? ''));
     function composicao(unidade: string, cobrancaId: string | undefined, dataAtual: string): string[] {
       const da = historico.filter((h) => h.unidade_id === unidade && h.ciclo_id !== id && (h.leituras?.data ?? '') < dataAtual);
       const ultimaCobrada = [...da].reverse().find((h) => h.situacao === 'cobrar');
