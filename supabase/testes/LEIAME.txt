@@ -1,0 +1,4 @@
+Teste do schema leitura no PGlite (Postgres em memoria). Aplica 20261028120000 e 20261029120000 (cadastros)
+e 20261029130000 (operacional) sobre stubs.sql e roda: replay do Monte Castelo 2026 (planilha + leituras das
+fotos em dados/) e as regras R1-R4, minimo, saida, troca de medidor, reabrir e grants.
+Rodar: npm i @electric-sql/pglite@0.3 (numa pasta fora do repo, ou quando o app existir) e node teste.mjs
