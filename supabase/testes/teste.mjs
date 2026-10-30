@@ -240,5 +240,53 @@ await q(`select leitura.faturar_ciclo($1,$2,'boleto','777',$3)`, [T, czc, P]);
 check('documento no ciclo', (await v(`select documento_numero from leitura.ciclos where id=$1`, [czc])) === '777');
 await erro('ciclo de condominio faturado nao reabre', `select leitura.reabrir_ciclo($1,$2,$3)`, [T, czc, P], 'Ciclo faturado');
 
+// ===== F. TRAVA DO MEDIDOR (cadastros 20261030130000, LEI3) =====
+const tv = await condominio('TRAVA', 'libergas', { 'T1': 100, 'T2': 200, 'T3': 300 });
+const CORR = `select leitura.corrigir_medidor($1,$2,$3,$4::date,$5,$6,$7)`;
+const corr = (med, data, ini, fim = null, serie = null) => q(CORR, [T, med, serie, data, ini, fim, P]);
+const tj = await abrir(tv.co, '2026-01');
+await lancar(tj, tv.u['T1'].med, 105);        // 5 m3 = cobrar
+await lancar(tj, tv.u['T3'].med, 302);        // 2 m3 = acumula
+await fechar(tj, true);
+// T1: leitura de 10/01 e cobranca partindo da inicial 100
+await erro('trava: leitura antes da nova data', CORR, [T, tv.u['T1'].med, null, '2026-01-15', 100, null, P], 'Leitura lancada em 10/01/2026 antes da nova data de instalacao');
+await erro('trava: leitura menor que a nova inicial', CORR, [T, tv.u['T1'].med, null, '2025-12-10', 106, null, P], 'Leitura lancada em 10/01/2026 (105.000) menor que a nova leitura inicial');
+await erro('trava: inicial usada como base', CORR, [T, tv.u['T1'].med, null, '2025-12-10', 99, null, P], 'Medidor usado na cobranca da leitura de 10/01/2026');
+await corr(tv.u['T1'].med, '2025-12-10', 100, null, 'SN-1');
+check('trava: numero de serie livre', (await v(`select numero_serie from leitura.medidores where id=$1`, [tv.u['T1'].med])) === 'SN-1');
+await corr(tv.u['T1'].med, '2025-12-01', 100, null, 'SN-1');
+check('trava: data sem contradicao passa', (await v(`select instalado_em::text from leitura.medidores where id=$1`, [tv.u['T1'].med])) === '2025-12-01');
+// T2: sem leitura nem cobranca, corrige como antes
+await corr(tv.u['T2'].med, '2025-12-10', 190);
+check('trava: medidor sem leitura corrige', Number(await v(`select leitura_inicial from leitura.medidores where id=$1`, [tv.u['T2'].med])) === 190);
+// T3: cobranca 'acumula' tambem trava a inicial
+await erro('trava: acumula tambem conta', CORR, [T, tv.u['T3'].med, null, '2025-12-10', 299, null, P], 'Medidor usado na cobranca');
+// troca no T3: medidor que sai tem leitura de 10/01 (302)
+const TROCA = `select leitura.instalar_medidor($1,$2,null,$3::date,0,$4,$5)`;
+await erro('troca: data antes da ultima leitura', TROCA, [T, tv.u['T3'].id, '2026-01-05', 303, P], 'Medidor atual tem leitura em 10/01/2026 depois da data da troca');
+await erro('troca: final menor que a leitura', TROCA, [T, tv.u['T3'].id, '2026-01-20', 301, P], 'Leitura final menor que a leitura lancada em 10/01/2026 (302.000)');
+const t3novo = await v(TROCA, [T, tv.u['T3'].id, '2026-01-20', 302.5, P]);
+const t3velho = tv.u['T3'].med;
+check('troca: no mesmo dia da leitura passa', !!t3novo);
+await erro('trava: medidor anterior com leitura depois', CORR, [T, t3novo, null, '2026-01-08', 0, null, P], 'Medidor anterior tem leitura em 10/01/2026 depois da nova data');
+await erro('trava: leitura maior que a nova final', CORR, [T, t3velho, null, '2025-12-10', 300, 301.9, P], 'Leitura lancada em 10/01/2026 (302.000) maior que a nova leitura final');
+await corr(t3velho, '2025-12-10', 300, 303);   // final ainda nao usada em cobranca (a acumula e do proprio medidor)
+check('trava: final livre antes de cobranca atravessar', Number(await v(`select leitura_final from leitura.medidores where id=$1`, [t3velho])) === 303);
+// fevereiro: cobranca atravessa a troca (base 300 no velho, leitura 5 no novo)
+const tf = await abrir(tv.co, '2026-02');
+await lancar(tf, t3novo, 5);
+await fechar(tf, true);
+check('trava: cobranca atravessa a troca', Number(await v(`select consumo from leitura.cobrancas where ciclo_id=$1 and unidade_id=$2`, [tf, tv.u['T3'].id])) === 8);
+await erro('trava: final usada na cobranca', CORR, [T, t3velho, null, '2025-12-10', 300, 304, P], 'Medidor usado na cobranca da leitura de 10/02/2026');
+await erro('trava: inicial do novo usada', CORR, [T, t3novo, null, '2026-01-20', 0.5, null, P], 'Medidor usado na cobranca da leitura de 10/02/2026');
+await corr(t3novo, '2026-01-20', 0, null, 'SN-3');
+check('trava: serie do novo livre', (await v(`select numero_serie from leitura.medidores where id=$1`, [t3novo])) === 'SN-3');
+// reabrir o ciclo apaga a cobranca e libera a correcao
+await q(`select leitura.reabrir_ciclo($1,$2,$3)`, [T, tf, P]);
+await corr(t3novo, '2026-01-20', 0.5, null, 'SN-3');
+check('trava: reabrir libera', Number(await v(`select leitura_inicial from leitura.medidores where id=$1`, [t3novo])) === 0.5);
+const priv2 = await q(`select has_function_privilege('authenticated','leitura.corrigir_medidor(uuid,uuid,text,date,numeric,numeric,uuid)','execute') a, has_function_privilege('service_role','leitura.instalar_medidor(uuid,uuid,text,date,numeric,numeric,uuid)','execute') b`);
+check('trava: grants', !priv2[0].a && priv2[0].b, JSON.stringify(priv2[0]));
+
 console.log(`\n${ok} verificacoes OK, ${falhas.length} falhas`);
 falhas.forEach(f => console.log('  FALHA', f));
