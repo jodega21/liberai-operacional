@@ -1,0 +1,1 @@
+export const TENANT_ID = 'a8286840-79af-4754-9b26-66300785c77f';

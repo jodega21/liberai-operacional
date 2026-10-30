@@ -1,0 +1,98 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Tema CLARO, sem modo escuro. A variante `dark` fica presa a uma classe que o
+   app nunca aplica: sem isto o Tailwind v4 usaria prefers-color-scheme e as
+   classes dark: dos componentes shadcn ligariam sozinhas com o SO no escuro. */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-ibm-plex-sans);
+  --font-mono: var(--font-ibm-plex-mono);
+  --font-heading: var(--font-maven-pro);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* Paleta de destaque com nome proprio, para o shell e as telas. */
+  --color-destaque: var(--destaque);
+  --color-destaque-suave: var(--destaque-suave);
+  --color-destaque-forte: var(--destaque-forte);
+  --color-destaque-texto: var(--destaque-texto);
+  --color-destaque-contraste: var(--destaque-contraste);
+  --color-lateral: var(--lateral);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* LiberAi Operacional — tema claro, cores do manual da marca Libergas (2017):
+   laranja #e1a064 (identidade deste app), cinza #8f929a (bordas e icones), azul #557dbe
+   (identidade do Financeiro, aqui so como apoio). O laranja puro nao aguenta texto branco
+   (contraste 2,1:1): botoes e selos laranja usam texto escuro (--destaque-contraste, 8:1);
+   texto e link laranja sobre fundo claro usam --destaque-texto (#9a5a1e, 5,6:1). */
+:root {
+  --destaque: #E1A064;
+  --destaque-suave: #FBEEE0;
+  --destaque-forte: #D08A48;          /* hover do botao */
+  --destaque-texto: #9A5A1E;          /* texto/link laranja sobre fundo claro */
+  --destaque-contraste: #2B1A0B;      /* texto sobre o laranja */
+  --lateral: #FFFFFF;                 /* menu lateral (direita) */
+
+  --background: #F6F4F1;              /* fundo quente */
+  --foreground: #23262B;
+  --card: #FFFFFF;
+  --card-foreground: #23262B;
+  --popover: #FFFFFF;
+  --popover-foreground: #23262B;
+  --primary: var(--destaque);
+  --primary-foreground: var(--destaque-contraste);
+  --secondary: var(--destaque-suave);
+  --secondary-foreground: var(--destaque-texto);
+  --muted: #EFECE8;
+  --muted-foreground: #5F636B;        /* 5,4:1 no fundo */
+  --accent: var(--destaque-suave);
+  --accent-foreground: var(--destaque-texto);
+  --destructive: #B42318;
+  --border: #DCDDE0;                  /* derivado do cinza #8f929a */
+  --input: #C9CBCF;
+  --ring: var(--destaque);
+  --radius: 0.625rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  h1, h2, h3 {
+    @apply font-heading;
+  }
+}
+
+/* Impressao do faturamento: A4 paisagem, fundo branco, sem o menu. */
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  body { background: #fff !important; }
+}
