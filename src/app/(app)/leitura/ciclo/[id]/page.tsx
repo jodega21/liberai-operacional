@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { FileText } from 'lucide-react';
+import { buttonVariants } from '@/components/ui/button';
 import { notFound } from 'next/navigation';
 import { exigir, pode } from '@/lib/acesso/permissoes';
 import { carregarCiclo } from '@/lib/leitura/carregar';
@@ -8,6 +10,9 @@ import { Documento } from './documento';
 import { Fechamento } from './fechamento';
 import { Impressao } from './impressao';
 import { LinhaLeitura } from './linha-leitura';
+
+// Links das folhas impressas (LEI4) com o visual do botao outline do ciclo.
+const LINK_BOTAO = buttonVariants({ variant: 'outline', className: 'h-9 px-3' });
 
 export default async function CicloPage({ params }: { params: Promise<{ id: string }> }) {
   await exigir(['operacional.leitura.lancar', 'operacional.leitura.fechar']);
@@ -52,7 +57,17 @@ export default async function CicloPage({ params }: { params: Promise<{ id: stri
             {r.d.vencimento && ` · vencimento ${formatarData(r.d.vencimento)}`}
             {condominio.cobra_condominio && ' · cobrado do condomínio'}
           </p>
-          {!aberto && <BotaoImprimir />}
+          {!aberto && (
+            <div className="flex flex-wrap gap-2">
+              <Link href={`/leitura/ciclo/${ciclo.id}/demonstrativos`} className={LINK_BOTAO}>
+                <FileText className="h-4 w-4" /> Demonstrativos
+              </Link>
+              <Link href={`/leitura/ciclo/${ciclo.id}/resumo`} className={LINK_BOTAO}>
+                <FileText className="h-4 w-4" /> Resumo do condomínio
+              </Link>
+              <BotaoImprimir />
+            </div>
+          )}
         </div>
       </header>
 
@@ -76,8 +91,15 @@ export default async function CicloPage({ params }: { params: Promise<{ id: stri
             editavel={aberto && podeLancar}
             fotoObrigatoria={condominio.quem_le === 'libergas'}
             documento={
-              !aberto && l.situacao === 'cobrar' && l.cobranca_id && !condominio.cobra_condominio ? (
-                <Documento alvo="cobranca" id={l.cobranca_id} atual={l.documento} tipoPadrao={l.tipo_padrao} podeLancar={podeFechar} />
+              !aberto && l.leitura && l.situacao !== 'sem_leitura' ? (
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  {l.situacao === 'cobrar' && l.cobranca_id && !condominio.cobra_condominio && (
+                    <Documento alvo="cobranca" id={l.cobranca_id} atual={l.documento} tipoPadrao={l.tipo_padrao} podeLancar={podeFechar} />
+                  )}
+                  <Link href={`/leitura/ciclo/${ciclo.id}/demonstrativos?unidade=${l.unidade_id}`} className="text-xs text-destaque-texto hover:underline">
+                    Demonstrativo
+                  </Link>
+                </span>
               ) : null
             }
           />

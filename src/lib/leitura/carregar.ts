@@ -3,6 +3,16 @@ import { TENANT_ID } from '@/lib/constants';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { lerPaginado } from './paginar';
 import {
+  montarDemonstrativos,
+  resumirCondominio,
+  type Demonstrativo,
+  type CobrancaHist,
+  type ExtrasUnidade,
+  type LeituraHist,
+  type MedidorHist,
+  type ResumoCondominio,
+} from './demonstrativo';
+import {
   BUCKET_FOTOS,
   mensagemErro,
   type CicloCompleto,
@@ -420,6 +430,95 @@ export async function carregarCiclo(id: string): Promise<{ ok: true; d: CicloCom
     };
   } catch (err) {
     console.error('[carregarCiclo]', err instanceof Error ? err.message : 'desconhecida');
+    return { ok: false };
+  }
+}
+
+// /leitura/ciclo/[id]/demonstrativos e /resumo (LEI4): o ciclo fechado + o que o demonstrativo mostra a
+// mais - data da leitura base, historico do ano por unidade e o fator kg/m3 da central.
+export type DadosDemonstrativos = {
+  ciclo: CicloCompleto;
+  demonstrativos: Demonstrativo[];
+  resumo: ResumoCondominio;
+  fator: number;
+};
+
+export async function carregarDemonstrativos(id: string): Promise<{ ok: true; d: DadosDemonstrativos | null } | { ok: false }> {
+  const r = await carregarCiclo(id);
+  if (!r.ok) return r;
+  if (!r.d || r.d.ciclo.status !== 'fechado') return { ok: true, d: null };
+  try {
+    const db = createServiceRoleClient();
+    const uids = r.d.linhas.map((l) => l.unidade_id);
+    const [cob, meds, unis, cobsUnid] = await Promise.all([
+      lerPaginado<{ unidade_id: string; base_medidor_id: string; base_valor: unknown }>((de, ate) => leitura(db).from('cobrancas')
+        .select('unidade_id, base_medidor_id, base_valor').eq('tenant_id', TENANT_ID).eq('ciclo_id', id).order('id').range(de, ate), 'cobrancas do ciclo'),
+      uids.length
+        ? lerPaginado<{ id: string; unidade_id: string; instalado_em: string; criado_em: string; leitura_inicial: unknown; leitura_final: unknown }>((de, ate) =>
+            leitura(db).from('medidores').select('id, unidade_id, instalado_em, criado_em, leitura_inicial, leitura_final')
+              .eq('tenant_id', TENANT_ID).in('unidade_id', uids).order('instalado_em').order('criado_em').order('id').range(de, ate), 'medidores')
+        : Promise.resolve([]),
+      uids.length
+        ? lerPaginado<{ id: string; central_id: string }>((de, ate) => leitura(db).from('unidades').select('id, central_id')
+            .eq('tenant_id', TENANT_ID).in('id', uids).order('id').range(de, ate), 'unidades')
+        : Promise.resolve([]),
+      uids.length
+        ? lerPaginado<{ unidade_id: string; situacao: 'cobrar' | 'acumula'; valor: unknown; preco_m3: unknown; ciclos: { referencia: string } | null }>((de, ate) =>
+            leitura(db).from('cobrancas').select('unidade_id, situacao, valor, preco_m3, ciclos(referencia)').eq('tenant_id', TENANT_ID)
+              .in('unidade_id', uids).not('ciclo_id', 'is', null).order('id').range(de, ate), 'cobrancas das unidades')
+        : Promise.resolve([]),
+    ]);
+    const medIds = meds.map((m) => m.id);
+    const leis = medIds.length
+      ? await lerPaginado<{ medidor_id: string; data: string; valor: unknown; tipo: 'mensal' | 'saida'; ciclos: { referencia: string } | null }>((de, ate) =>
+          leitura(db).from('leituras').select('medidor_id, data, valor, tipo, ciclos(referencia)').eq('tenant_id', TENANT_ID)
+            .in('medidor_id', medIds).order('data').order('id').range(de, ate), 'leituras da unidade')
+      : [];
+    // Um condominio tem uma central (nenhum tem mais, 28/10); com mais de uma, vale o fator da primeira.
+    const centrais = [...new Set(unis.map((u) => u.central_id))];
+    let fator = 2.35;
+    if (centrais.length) {
+      const c = await leitura(db).from('centrais').select('id, fator_kg_m3').eq('tenant_id', TENANT_ID).in('id', centrais).order('id');
+      falha('centrais', c.error);
+      const primeira = (c.data ?? [])[0] as { fator_kg_m3: unknown } | undefined;
+      if (primeira) fator = Number(primeira.fator_kg_m3);
+    }
+
+    const medPorUnidade = new Map<string, MedidorHist[]>();
+    const unidadeDoMedidor = new Map<string, string>();
+    for (const m of meds) {
+      unidadeDoMedidor.set(m.id, m.unidade_id);
+      const lista = medPorUnidade.get(m.unidade_id) ?? [];
+      lista.push({ id: m.id, instalado_em: m.instalado_em, criado_em: m.criado_em, leitura_inicial: Number(m.leitura_inicial), leitura_final: num(m.leitura_final) });
+      medPorUnidade.set(m.unidade_id, lista);
+    }
+    const leiPorUnidade = new Map<string, LeituraHist[]>();
+    for (const l of leis) {
+      const u = unidadeDoMedidor.get(l.medidor_id);
+      if (!u) continue;
+      const lista = leiPorUnidade.get(u) ?? [];
+      lista.push({ medidor_id: l.medidor_id, data: l.data, valor: Number(l.valor), tipo: l.tipo, referencia: l.ciclos?.referencia ?? null });
+      leiPorUnidade.set(u, lista);
+    }
+    const cobPorUnidade = new Map<string, CobrancaHist[]>();
+    for (const c of cobsUnid) {
+      if (!c.ciclos) continue;
+      const lista = cobPorUnidade.get(c.unidade_id) ?? [];
+      lista.push({ referencia: c.ciclos.referencia, situacao: c.situacao, valor: Number(c.valor), preco_m3: Number(c.preco_m3) });
+      cobPorUnidade.set(c.unidade_id, lista);
+    }
+    const basePorUnidade = new Map(cob.map((c) => [c.unidade_id, { medidor_id: c.base_medidor_id, valor: Number(c.base_valor) }]));
+    const extras = new Map<string, ExtrasUnidade>(uids.map((u) => [u, {
+      base: basePorUnidade.get(u) ?? null,
+      medidores: medPorUnidade.get(u) ?? [],
+      leituras: leiPorUnidade.get(u) ?? [],
+      cobrancas: cobPorUnidade.get(u) ?? [],
+    }]));
+
+    const demonstrativos = montarDemonstrativos(r.d, extras, fator);
+    return { ok: true, d: { ciclo: r.d, demonstrativos, resumo: resumirCondominio(demonstrativos, fator), fator } };
+  } catch (err) {
+    console.error('[carregarDemonstrativos]', err instanceof Error ? err.message : 'desconhecida');
     return { ok: false };
   }
 }
