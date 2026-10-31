@@ -33,3 +33,13 @@
 **Status:** regra adotada
 - A tabela de versions e a mesma do financeiro e do cadastros: 20261029170000 colidiu com o financeiro e foi renumerada para
   20261029171000. Conferir as versions do dia nos 3 repos antes de criar.
+
+## [DADO] La Citta 208: planilha faturou de novo o consumo de agosto (LEI4b, 30/10)
+
+**Status:** aberto (fora do sistema) · **Severidade:** media
+- A planilha de out/2026 cobrou o 208 de 38,177 a 41,941 (3,764 m3, R$ 90,41), mas agosto ja tinha sido cobrado de 38,177 a 41,078 (2,901 m3, R$ 69,68). No sistema o 208 acumula 0,863 m3 em outubro. Se o boleto de R$ 90,41 foi emitido: cancelar e reemitir ou gerar credito (Daniel decide).
+
+## [DADO] Historico de 2026 com o relogio repetido nos meses acumulados (LEI4, 30/10)
+
+**Status:** aceito como a planilha · **Severidade:** baixa
+- A planilha repetia o numero do relogio nos meses que acumulavam: o grafico do demonstrativo mostra 0 m3 nesses meses e o consumo inteiro no mes cobrado. Corrige sozinho com as leituras reais do app (a partir de novembro). Precos variam por unidade na planilha (Monte Castelo 402 set/2026 a 38,18/m3; os demais 22,35) - conferir com a operacao.

@@ -55,7 +55,7 @@ Commits f6afabe (base), bf82331 e 8ba8b24 (db), 2a8e535 (codigo), e55e5d5 (teste
 
 ### LEI3 — Paginacao das consultas da leitura e teste da trava do medidor
 
-**Decidido em:** 30/10/2026 · **Status:** codigo pronto, nao commitado nem validado no browser.
+**Decidido em:** 30/10/2026 · **Status:** em producao - commits ea00e5b, da895ff, c70b361 e eacdeae, push 30/10 (a migration da trava e do cadastros, aplicada 30/10).
 
 - Paginacao (opcao A, Daniel 30/10): lerPaginado (src/lib/leitura/paginar.ts), mesmo padrao do liberai-financeiro - pagina de 1.000
   com ordem total terminando em id. Descartadas: limitar por periodo (unidade sem cobranca ha muito tempo sumiria da conta) e
@@ -68,7 +68,7 @@ Commits f6afabe (base), bf82331 e 8ba8b24 (db), 2a8e535 (codigo), e55e5d5 (teste
 
 ### LEI4 — Demonstrativo do morador e resumo do condominio (impressos)
 
-**Decidido em:** 30/10/2026 · **Status:** codigo pronto, nao commitado nem validado no browser. Sem migration.
+**Decidido em:** 30/10/2026 · **Status:** validado por Daniel no browser local (30/10, depois dos ajustes); commits dfd2232 e e6efc16; push pendente no fechamento de 30/10. Sem migration.
 
 - Esboco aprovado por Daniel (30/10) com os dados reais do Monte Castelo out/2026; recomendacoes aceitas: D1-A meia folha A4, dois por folha com linha de corte; D2-A todas as unidades com leitura no ciclo fechado, inclusive as que acumulam ("Sem cobranca neste mes"); D3-A historico do ano em barras; D5-A no ciclo fechado, botoes "Demonstrativos" e "Resumo do condominio" e link "Demonstrativo" por unidade (?unidade=).
 - Marca: logo da Libergas com o selo Nacional Gas (arquivo do Project "Marca Principal nacionalgas CMYK", convertido para public/marca-libergas.jpg, 1400 px). Cores da marca fixas no papel (azul #557dbe, laranja #e1a064).
@@ -80,3 +80,15 @@ Commits f6afabe (base), bf82331 e 8ba8b24 (db), 2a8e535 (codigo), e55e5d5 (teste
 - Ajustes depois da conversa de Daniel com a operacao (30/10): (1-A) cada barra mostra m3 e o valor do consumo do mes (m3 x preco do m3 da propria cobranca da unidade; sem preco - acumuladas da planilha - o preco mais comum do ciclo, porque na planilha o preco varia por unidade: Monte Castelo set/2026 22,35 e 38,18, Mahe seis precos); mes acumulado com "+" (soma com o seguinte); mes cobrado por valor diferente do proprio consumo com "= total cobrado"; legenda embaixo. Numero do boleto (ou NF-e/recibo) lancado no faturamento aparece abaixo do valor; "Faturado (planilha)" nao aparece.
 - Comunicado aos moradores (primeiro demonstrativo): modelo em PDF (comunicado + demonstrativo de exemplo numa A4) entregue a Daniel para mostrar aos envolvidos; entrar no sistema (opcao A, caixa "Incluir comunicado") fica para depois dessa conversa.
 - Teste: 19 novos (83 no total), typecheck, lint e build OK. Render com dados reais (so leitura) em PDF A4: 8 demonstrativos em 4 folhas, resumo em 1.
+
+### LEI4b — La Citta out/2026 lancado por planilha (antes do sistema)
+
+**Decidido em:** 30/10/2026 · **Status:** aplicado via Studio por Daniel em 30/10 (script supabase/dados/20261030150000_la_citta_leitura_out2026.sql, fora do git); ciclo fechado por Daniel no app.
+
+- Leitura de 20/10/2026 da planilha (anterior ao sistema): 41 leituras com origem 'planilha', sem foto (Daniel, 4-B; a regra da foto vale a partir de novembro). Cada uma passou por leitura._validar_leitura antes do INSERT; ciclo aberto por leitura.abrir_ciclo. Testado em PGlite antes.
+- Conferencia com o banco antes de gravar: 105 = 34,533 (planilha dizia 34,333, menor que a anterior) e 208 com anterior 41,078 (planilha dizia 38,177) - confirmados por Daniel. Preco: depende da CAD32 do cadastros (vigencia dos especiais), aplicada antes.
+- Previa: cobrar 10 unidades, 45,681 m3, R$ 1.097,27; acumula 31 (com o em aberto de maio do 305 e do 409). A planilha faturou R$ 1.187,67 - a diferenca e o 208 (ver KNOWN_ISSUES).
+
+### LEI5 — Envio do demonstrativo (DESENHO)
+
+**Decidido em:** 30/10/2026 (so desenho) · **Status:** decisoes E1-E9 em aberto, em docs/DESENHO-LEI5-ENVIO.md. A proxima sessao comeca por ele.
