@@ -1,6 +1,6 @@
 # Desenho LEI5 — Envio do demonstrativo e canal de correspondencia
 
-Status: DESENHO (30/10/2026), nada implementado. Proxima sessao comeca aqui: Daniel fecha as decisoes E1-E9 e
+Status (01/11/2026): E1-E9 decididos por Daniel em 31/10 (todas as recomendacoes); fatia 1 feita (CAD33 do liberai-cadastros). Historico: DESENHO (30/10/2026); Daniel fechou as decisoes E1-E9 e
 a implementacao segue por fatias. Pedido de Daniel (30/10, apos a conversa com a operacao): botao "Enviar" no
 ciclo depois de lancar os boletos; cada cliente recebe pelo seu canal (e-mail, carta, WhatsApp, outros); o
 WhatsApp tem que existir ("o mais promissor hoje"); automatizar o envio e mandar junto NF e boleto ficam para

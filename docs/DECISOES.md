@@ -91,4 +91,4 @@ Commits f6afabe (base), bf82331 e 8ba8b24 (db), 2a8e535 (codigo), e55e5d5 (teste
 
 ### LEI5 — Envio do demonstrativo (DESENHO)
 
-**Decidido em:** 30/10/2026 (so desenho) · **Status:** decisoes E1-E9 em aberto, em docs/DESENHO-LEI5-ENVIO.md. A proxima sessao comeca por ele.
+**Decidido em:** 30/10/2026 (desenho), 31/10 (decisoes) · **Status:** Daniel seguiu as recomendacoes E1-E9 (31/10); desenho em docs/DESENHO-LEI5-ENVIO.md. Fatia 1 (contatos e canal no cadastro) feita no liberai-cadastros como CAD33 (01/11, migrations 20261031120000/130000 aplicadas e registradas, validada no browser). Proxima: fatia 2 (registro de envio + botao Enviar por e-mail) - depende do servico de envio (E3) e da migracao do e-mail para o Microsoft 365 / DNS na Cloudflare decidida em 31/10.
