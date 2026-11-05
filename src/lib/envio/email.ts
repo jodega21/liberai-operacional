@@ -34,14 +34,17 @@ function data(iso: string): string {
   return formatarData(iso).replace(/\//g, '/\u2060');
 }
 
-// Rodape em duas linhas (Daniel, 05/11): lado a lado, o app do Gmail no celular espremia a coluna do
-// WhatsApp e quebrava o telefone em "3227-" / "2263" mesmo com white-space:nowrap.
+// Rodape (Daniel, 05/11): telefone e QR code do WhatsApp como na folha impressa (public/whatsapp-qr.png,
+// PNG porque o Gmail nao mostra SVG); o QR tambem e link, para quem le no proprio celular. A observacao
+// vai na linha de baixo, largura toda: lado a lado, o Gmail do celular quebrava o telefone.
 function rodape(urlBase: string, observacao: string): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;border-top:1px solid #e5e7eb">
-<tr><td style="padding-top:10px;font-size:14px">
+<tr><td valign="middle" style="padding-top:10px;font-size:14px">
 <a href="${WHATSAPP.link}" style="color:#25a35a;font-weight:bold;text-decoration:none;white-space:nowrap">WhatsApp ${escapar(WHATSAPP.rotulo)}</a>
-<span style="font-size:13px;color:${CINZA}"> · Dúvidas? Fale com a Libergás</span></td></tr>
-<tr><td style="padding-top:8px;font-size:12px;color:${CINZA}">${escapar(observacao)}</td></tr></table>`;
+<div style="font-size:13px;color:${CINZA}">Dúvidas? Fale com a Libergás.</div>
+<div style="font-size:12px;color:${CINZA}">Aponte a câmera para o código ou toque nele.</div></td>
+<td width="84" align="right" valign="middle" style="padding-top:10px;width:84px"><a href="${WHATSAPP.link}"><img src="${escapar(urlBase)}/whatsapp-qr.png" alt="QR code do WhatsApp da Libergás" width="80" height="80" style="display:block;width:80px;height:80px;border:0"></a></td></tr>
+<tr><td colspan="2" style="padding-top:8px;font-size:12px;color:${CINZA}">${escapar(observacao)}</td></tr></table>`;
 }
 
 // Campo de valor. Dois por linha (antes quatro): no celular quatro colunas quebravam "3,445 m³" e
