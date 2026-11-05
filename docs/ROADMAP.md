@@ -1,6 +1,6 @@
 # Roadmap — LiberAi Operacional
 
-Ultima atualizacao: 2026-11-01 (LEI5 fatia 1)
+Ultima atualizacao: 2026-11-05 (LEI5 fatia 2)
 
 ## LEI2 — Leitura de medidores — CONCLUIDA (29-30/10)
 
@@ -16,8 +16,8 @@ Ultima atualizacao: 2026-11-01 (LEI5 fatia 1)
 - ✅ Trava do medidor no cadastros (LEI3, 30/10; migration 20261030130000 do liberai-cadastros aplicada e registrada 30/10, teste no bloco F de supabase/testes).
 - ✅ La Citta out/2026 lancado por planilha (LEI4b, 30/10), sem foto; ciclo fechado.
 - ✅ Demonstrativo por morador e resumo do condominio, impressos (LEI4, 30/10): ciclo fechado > Demonstrativos / Resumo do condominio / Demonstrativo por unidade.
-- 🔜 Envio do demonstrativo (LEI5, desenho em docs/DESENHO-LEI5-ENVIO.md, E1-E9 decididos 31/10; ✅ fatia 1 contatos e canal = CAD33 do cadastros, 01/11; Daniel, 30/10): botao "Enviar" no ciclo depois de lancar os boletos; canal de correspondencia por pessoa (e-mail, WhatsApp, carta, outro) no cadastro; WhatsApp e obrigatorio ("o mais promissor"), numero (54) 3227-2263 ja e WhatsApp Business. Futuro: envio automatico quando conferido e com boleto lancado.
-- 🔜 Comunicado no sistema (caixa "Incluir comunicado": comunicado + demonstrativo na mesma A4), se aprovado pelos envolvidos (modelo entregue 30/10).
+- 🔜 Envio do demonstrativo (LEI5, desenho em docs/DESENHO-LEI5-ENVIO.md, E1-E9 decididos 31/10; ✅ fatia 1 contatos e canal = CAD33 do cadastros, 01/11; ✅ fatia 2 envio por e-mail pelo SES, com comunicado no primeiro envio, 05/11; 🔜 WhatsApp; Daniel, 30/10): botao "Enviar" no ciclo depois de lancar os boletos; canal de correspondencia por pessoa (e-mail, WhatsApp, carta, outro) no cadastro; WhatsApp e obrigatorio ("o mais promissor"), numero (54) 3227-2263 ja e WhatsApp Business. Futuro: envio automatico quando conferido e com boleto lancado.
+- ✅ Comunicado aprovado (Daniel, 04/11): vai no primeiro e-mail de cada pessoa (LEI5 fatia 2). 🔜 Na folha impressa (caixa "Incluir comunicado": comunicado + demonstrativo na mesma A4).
 - Futuro (Daniel, 30/10): NF e boleto saem do BS (e-mail nfe@libergas.com.br; NF numa pasta do servidor, boleto numa pasta do PC que emitiu). Por ora o demonstrativo vai separado; "tudo junto" quando a emissao de NF estiver no LiberAI.
 - Futuro (Daniel, 30/10): pedidos integrados com atendente IA no WhatsApp e no telefone.
 - ✅ Dado: 13 moradores com e-mail generico da Libergas apagados (CAD33, 01/11). 🔜 Monte Castelo 402 set/2026 cobrado a R$ 38,18/m3 na planilha (os demais 22,35) - conferir.

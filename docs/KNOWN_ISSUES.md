@@ -43,3 +43,11 @@
 
 **Status:** aceito como a planilha · **Severidade:** baixa
 - A planilha repetia o numero do relogio nos meses que acumulavam: o grafico do demonstrativo mostra 0 m3 nesses meses e o consumo inteiro no mes cobrado. Corrige sozinho com as leituras reais do app (a partir de novembro). Precos variam por unidade na planilha (Monte Castelo 402 set/2026 a 38,18/m3; os demais 22,35) - conferir com a operacao.
+
+## [RISCO] Envio do demonstrativo: e-mail em dobro e registro perdido (LEI5 fatia 2, 05/11)
+
+**Status:** aceito (volume pequeno, envio manual) · **Severidade:** baixa
+- Duas abas ou dois usuarios clicando "Enviar" no mesmo ciclo ao mesmo tempo mandam o e-mail duas vezes (os botoes so travam na
+  propria tela). Caminho se acontecer: trava por ciclo no servidor ou indice unico por origem e destinatario no dia.
+- Se o SES aceita o e-mail e a gravacao em comunicacao.envios falha, o morador recebeu mas a tela mostra pendente, e o proximo
+  "Enviar" repete (o comunicado tambem). A falha so aparece no log da Vercel ("[enviarDemonstrativos] registro do envio").

@@ -91,4 +91,15 @@ Commits f6afabe (base), bf82331 e 8ba8b24 (db), 2a8e535 (codigo), e55e5d5 (teste
 
 ### LEI5 — Envio do demonstrativo (DESENHO)
 
-**Decidido em:** 30/10/2026 (desenho), 31/10 (decisoes) · **Status:** Daniel seguiu as recomendacoes E1-E9 (31/10); desenho em docs/DESENHO-LEI5-ENVIO.md. Fatia 1 (contatos e canal no cadastro) feita no liberai-cadastros como CAD33 (01/11, migrations 20261031120000/130000 aplicadas e registradas, validada no browser). Proxima: fatia 2 (registro de envio + botao Enviar por e-mail) - depende do servico de envio (E3) e da migracao do e-mail para o Microsoft 365 / DNS na Cloudflare decidida em 31/10.
+**Decidido em:** 30/10/2026 (desenho), 31/10 (decisoes) · **Status:** Daniel seguiu as recomendacoes E1-E9 (31/10); desenho em docs/DESENHO-LEI5-ENVIO.md. Fatia 1 (contatos e canal no cadastro) feita no liberai-cadastros como CAD33 (01/11, migrations 20261031120000/130000 aplicadas e registradas, validada no browser). Fatia 2 (envio por e-mail) feita em 04-05/11 - ver abaixo.
+
+### LEI5 fatia 2 — Envio do demonstrativo por e-mail
+
+**Decidido em:** 04/11/2026 (G1-G6) e 05/11 (ajustes do e-mail) · **Status:** em producao (commits 13158a3, d11ae07, a4d248a, 972aa92, 74be65c; migration 20261104130000 aplicada e registrada em 04/11, schema comunicacao exposto na API). Testado por Daniel em producao (La Citta 104, boleto de teste desfeito e envios de teste apagados em 05/11).
+
+- Servico: Amazon SES (us-east-2, acesso de producao, dominio libergas.com.br verificado). Remetente "Libergas – Leitura de gas <leitura@libergas.com.br>", resposta para libergas@libergas.com.br (G3: caixa que os 6 usuarios acessam). Usuario IAM so com ses:SendEmail restrito ao remetente; chaves SES_ACCESS_KEY_ID / SES_SECRET_ACCESS_KEY / SES_REGION so no .env.local e na Vercel (o prefixo AWS_ e reservado pela Vercel). URL_PUBLICA_OPERACIONAL monta o endereco das imagens do e-mail.
+- G1-A: o morador recebe so a cobranca A COBRAR com documento lancado (boleto, NF-e ou recibo; 'planilha' nao conta) e so com canal "E-mail" e e-mail valido no cadastro (CAD33). A tela mostra o motivo de quem fica de fora (documento nao lancado, sem morador, canal nao e e-mail, sem e-mail).
+- G2: condominio que paga (documento no ciclo) recebe o resumo nos e-mails da configuracao da leitura (emails_demonstrativo).
+- E9-A: o comunicado aprovado vai junto no PRIMEIRO demonstrativo enviado com sucesso a cada pessoa (conta pelo registro de envios).
+- E7-A: registro generico comunicacao.envios (canal, destinatario, origem, status, erro, quem e quando); cada tentativa e uma linha, reenvio = linha nova; app so le e insere. G5: o envio parte sempre de um clique - "Enviar N e-mail(s)" com confirmacao (so os pendentes) e "Reenviar" por unidade. G4: so quem fecha o ciclo (operacional.leitura.fechar, Administrador).
+- E-mail (Daniel, 05/11): logo colorida sem fundo (le no modo claro e no escuro; logo branca so no escuro funcionaria no Apple Mail, nao no Gmail); no celular os quatro campos ficam 2x2, o grafico mostra so m3 com uma casa e a tabela mes a mes abaixo traz m3 e valor em R$ ("quanto mais informacao, menos confusao"); datas sem virar link; rodape em duas linhas (telefone quebrava no Gmail do celular). QR code do WhatsApp so na folha impressa: no e-mail o fundo branco destoava e o telefone ja e link.
