@@ -22,6 +22,9 @@ describe('emailDemonstrativo', () => {
     expect(e.html).toContain('10/\u206011/\u20602026');
     expect(e.html).toContain('JOSÉ &lt;TESTE&gt;');
     expect(e.html).toContain('https://app.test/marca-libergas-transparente.png');
+    // tabela mes a mes abaixo do grafico, com o valor em R$
+    expect(e.html).toContain('VALOR DO CONSUMO');
+    expect(e.html).toMatch(/22,391<\/td><td[^>]*>R\$\s500,44<\/td>/);
     expect(e.html).not.toContain('Prezado(a) morador(a)');
     expect(e.texto).toContain('Leitura atual: 8.107,534 m³ (10/10/2026)');
   });

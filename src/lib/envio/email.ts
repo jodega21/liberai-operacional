@@ -38,7 +38,7 @@ function rodape(urlBase: string, observacao: string): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;border-top:1px solid #e5e7eb">
 <tr><td style="padding-top:10px;font-size:12px;color:${CINZA}">${escapar(observacao)}</td>
 <td align="right" style="padding-top:10px;font-size:13px;white-space:nowrap">
-<a href="${WHATSAPP.link}" style="color:#25a35a;font-weight:bold;text-decoration:none">WhatsApp ${escapar(WHATSAPP.rotulo)}</a>
+<a href="${WHATSAPP.link}" style="color:#25a35a;font-weight:bold;text-decoration:none;white-space:nowrap">WhatsApp ${escapar(WHATSAPP.rotulo)}</a>
 <div style="font-size:12px;color:${CINZA}">Dúvidas? Fale com a Libergás</div></td></tr></table>`;
 }
 
@@ -81,9 +81,22 @@ function historico(pontos: PontoHistorico[], referencia: string): string {
   const marca = pontos.some((p) => p.marca)
     ? `<div style="font-size:11px;color:${CINZA};margin-top:4px">+ abaixo do mínimo, somou com o mês seguinte · = mês em que o acumulado foi cobrado</div>`
     : '';
+  // Tabela mes a mes abaixo do grafico (Daniel, 05/11: "quanto mais informacao, menos confusao"): o
+  // valor em R$ que nao cabe no grafico do celular. Tres colunas largas cabem em qualquer tela.
+  const linhas = meses.filter((m) => porMes.has(m)).map((m) => {
+    const p = porMes.get(m)!;
+    const atual = m === referencia;
+    const valor = p.marca === '=' && p.valor_cobrado !== null ? `${formatarMoeda(p.valor_cobrado)} =`
+      : p.valor !== null ? `${formatarMoeda(p.valor)}${p.marca === '+' ? ' +' : ''}` : p.marca === '+' ? '+' : '—';
+    const est = `padding:3px 8px;border-top:1px solid #e5e7eb;${atual ? 'font-weight:bold;' : ''}`;
+    return `<tr><td style="${est}">${escapar(rotuloMes(m))}</td><td align="right" style="${est}white-space:nowrap">${escapar(formatarM3(p.m3))}</td><td align="right" style="${est}white-space:nowrap">${escapar(valor)}</td></tr>`;
+  });
+  const tabela = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;font-size:13px;border:1px solid #d1d5db;border-radius:4px">
+<tr><td style="padding:4px 8px;font-size:11px;color:${CINZA}">MÊS</td><td align="right" style="padding:4px 8px;font-size:11px;color:${CINZA}">M³</td><td align="right" style="padding:4px 8px;font-size:11px;color:${CINZA}">VALOR DO CONSUMO</td></tr>
+${linhas.join('\n')}</table>`;
   return `<div style="margin-top:14px">${rotuloPequeno(`Consumo da unidade em ${ano} (m³)`)}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;margin-top:4px">
-<tr>${valores.join('')}</tr><tr>${barras.join('')}</tr><tr>${nomes.join('')}</tr></table>${marca}</div>`;
+<tr>${valores.join('')}</tr><tr>${barras.join('')}</tr><tr>${nomes.join('')}</tr></table>${tabela}${marca}</div>`;
 }
 
 // Comunicado do primeiro mes (E9-A; texto aprovado, Daniel 04/11).
