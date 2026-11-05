@@ -34,12 +34,14 @@ function data(iso: string): string {
   return formatarData(iso).replace(/\//g, '/\u2060');
 }
 
+// Rodape em duas linhas (Daniel, 05/11): lado a lado, o app do Gmail no celular espremia a coluna do
+// WhatsApp e quebrava o telefone em "3227-" / "2263" mesmo com white-space:nowrap.
 function rodape(urlBase: string, observacao: string): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;border-top:1px solid #e5e7eb">
-<tr><td style="padding-top:10px;font-size:12px;color:${CINZA}">${escapar(observacao)}</td>
-<td align="right" style="padding-top:10px;font-size:13px;white-space:nowrap">
+<tr><td style="padding-top:10px;font-size:14px">
 <a href="${WHATSAPP.link}" style="color:#25a35a;font-weight:bold;text-decoration:none;white-space:nowrap">WhatsApp ${escapar(WHATSAPP.rotulo)}</a>
-<div style="font-size:12px;color:${CINZA}">Dúvidas? Fale com a Libergás</div></td></tr></table>`;
+<span style="font-size:13px;color:${CINZA}"> · Dúvidas? Fale com a Libergás</span></td></tr>
+<tr><td style="padding-top:8px;font-size:12px;color:${CINZA}">${escapar(observacao)}</td></tr></table>`;
 }
 
 // Campo de valor. Dois por linha (antes quatro): no celular quatro colunas quebravam "3,445 m³" e
