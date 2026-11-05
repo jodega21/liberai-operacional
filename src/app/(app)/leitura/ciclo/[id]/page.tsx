@@ -7,6 +7,9 @@ import { carregarCiclo } from '@/lib/leitura/carregar';
 import { formatarData, formatarM3, formatarMoeda, idSchema, ROTULO_QUEM_LE, rotuloMes, type LinhaCiclo } from '@/lib/leitura/modelo';
 import { BotaoImprimir } from './botao-imprimir';
 import { Documento } from './documento';
+import { Envio, type AlvoTela } from './envio';
+import { carregarEnvio } from '@/lib/envio/carregar';
+import { chaveAlvo } from '@/lib/envio/modelo';
 import { Fechamento } from './fechamento';
 import { Impressao } from './impressao';
 import { LinhaLeitura } from './linha-leitura';
@@ -30,6 +33,24 @@ export default async function CicloPage({ params }: { params: Promise<{ id: stri
 
   const cobrar = linhas.filter((l) => l.situacao === 'cobrar');
   const faturado = !aberto && (condominio.cobra_condominio ? !!ciclo.documento : cobrar.length > 0 && cobrar.every((l) => l.documento));
+
+  // Envio por e-mail (LEI5 fatia 2): ciclo fechado com cobranca, so para quem fecha o ciclo (G4).
+  let alvosEnvio: AlvoTela[] | null = null;
+  let erroEnvio = false;
+  if (!aberto && podeFechar && cobrar.length > 0) {
+    const e = await carregarEnvio(ciclo.id);
+    if (!e.ok) erroEnvio = true;
+    else if (e.d) {
+      alvosEnvio = e.d.alvos.map((a) => ({
+        chave: chaveAlvo(a),
+        rotulo: a.rotulo,
+        para: a.para,
+        motivo: a.motivo,
+        comComunicado: a.com_comunicado,
+        ultimo: a.ultimo ? { status: a.ultimo.status, enviado_em: a.ultimo.enviado_em, erro: a.ultimo.erro } : null,
+      }));
+    }
+  }
 
   return (
     <>
@@ -105,6 +126,9 @@ export default async function CicloPage({ params }: { params: Promise<{ id: stri
           />
         ))}
       </ul>
+
+      {alvosEnvio && <Envio cicloId={ciclo.id} alvos={alvosEnvio} />}
+      {erroEnvio && <p className="text-sm text-destructive">Não foi possível carregar o envio por e-mail. Tente de novo.</p>}
 
       {podeFechar && (
         <Fechamento cicloId={ciclo.id} aberto={aberto} faltam={linhas.length - lidas} lidas={lidas} condominioId={condominio.id} />
