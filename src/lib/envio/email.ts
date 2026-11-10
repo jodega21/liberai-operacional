@@ -7,6 +7,7 @@
 // escuro. No celular, os quatro campos viram dois por linha e as datas nao viram link.
 
 import { WHATSAPP, type Demonstrativo, type PontoHistorico, type ResumoCondominio } from '@/lib/leitura/demonstrativo';
+import { textoComunicado } from '@/lib/leitura/comunicado';
 import { formatarData, formatarM3, formatarMoeda, ROTULO_DOCUMENTO, rotuloMes, type TipoDocumento } from '@/lib/leitura/modelo';
 
 const AZUL = '#557dbe';
@@ -101,29 +102,17 @@ ${linhas.join('\n')}</table>`;
 <tr>${valores.join('')}</tr><tr>${barras.join('')}</tr><tr>${nomes.join('')}</tr></table>${tabela}${marca}</div>`;
 }
 
-// Comunicado do primeiro mes (E9-A; texto aprovado, Daniel 04/11).
+// Comunicado do primeiro mes (E9-A): texto em lib/leitura/comunicado.ts (o mesmo da folha impressa).
 function comunicado(minimo: number): { html: string; texto: string } {
-  const paragrafos = [
-    'A partir deste mês, a Libergás passa a registrar as leituras do gás do seu condomínio em um sistema próprio. Junto com a cobrança, você vai receber este demonstrativo, que mostra:',
-  ];
-  const itens = [
-    'a leitura anterior e a atual do seu medidor, com as datas;',
-    'o consumo do período, em m³ e em kg de gás;',
-    'o preço do m³ e o valor do período;',
-    'o seu consumo mês a mês ao longo do ano.',
-  ];
-  const depois = [
-    `O cálculo continua o mesmo: consumo em m³ × preço do m³. Quando o valor do mês fica abaixo do mínimo de ${formatarMoeda(minimo)}, ele não é cobrado naquele mês: acumula e entra na próxima cobrança. O demonstrativo indica quando isso acontece.`,
-    'Sobre o gráfico: os meses anteriores a outubro/2026 vêm do nosso controle antigo, em planilha. Nos meses em que o consumo acumulava, o mês pode aparecer zerado, e o total aparece no mês em que foi cobrado.',
-  ];
+  const t = textoComunicado(minimo);
   const html = `<div style="border:1px solid #d1d5db;border-radius:6px;padding:14px 16px;margin-bottom:18px;font-size:14px;line-height:1.5">
-<div style="font-size:15px;font-weight:bold;margin-bottom:6px">Novo demonstrativo de consumo de gás</div>
-<p style="margin:0 0 6px">Prezado(a) morador(a),</p>
-<p style="margin:0 0 4px">${escapar(paragrafos[0])}</p>
-<ul style="margin:0 0 8px;padding-left:20px">${itens.map((i) => `<li>${escapar(i)}</li>`).join('')}</ul>
-${depois.map((p) => `<p style="margin:0 0 8px">${escapar(p)}</p>`).join('')}
-<p style="margin:0">Atenciosamente,<br>Libergás</p></div>`;
-  const texto = ['Novo demonstrativo de consumo de gás', '', 'Prezado(a) morador(a),', paragrafos[0], ...itens.map((i) => `- ${i}`), '', ...depois, '', 'Atenciosamente,', 'Libergás', '', '----', ''].join('\n');
+<div style="font-size:15px;font-weight:bold;margin-bottom:6px">${escapar(t.titulo)}</div>
+<p style="margin:0 0 6px">${escapar(t.saudacao)}</p>
+<p style="margin:0 0 4px">${escapar(t.abertura)}</p>
+<ul style="margin:0 0 8px;padding-left:20px">${t.itens.map((i) => `<li>${escapar(i)}</li>`).join('')}</ul>
+${t.depois.map((p) => `<p style="margin:0 0 8px">${escapar(p)}</p>`).join('')}
+<p style="margin:0">Atenciosamente,<br>${escapar(t.assinatura)}</p></div>`;
+  const texto = [t.titulo, '', t.saudacao, t.abertura, ...t.itens.map((i) => `- ${i}`), '', ...t.depois, '', 'Atenciosamente,', t.assinatura, '', '----', ''].join('\n');
   return { html, texto };
 }
 

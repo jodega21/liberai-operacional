@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { MessageCircle } from 'lucide-react';
+import { textoComunicado } from '@/lib/leitura/comunicado';
 import { WHATSAPP, type Demonstrativo, type PontoHistorico } from '@/lib/leitura/demonstrativo';
 import { formatarData, formatarM3, formatarMoeda, ROTULO_DOCUMENTO, rotuloMes } from '@/lib/leitura/modelo';
 
@@ -69,7 +70,7 @@ function Historico({ pontos, referencia }: { pontos: PontoHistorico[]; referenci
       </div>
       {/* m3 e R$ em cima de cada barra (Daniel, 30/10): '+' o mes acumulou e soma com o seguinte; '=' total
           cobrado no mes. O mes de referencia em destaque. pt reserva o espaco do rotulo da barra mais alta. */}
-      <div className="flex h-[23mm] items-end gap-[1.2mm] border-b border-neutral-300 pt-[6.4mm]">
+      <div className="flex h-[16mm] items-end gap-[1.2mm] border-b border-neutral-300 pt-[6.4mm]">
         {meses.map((m) => {
           const v = porMes.get(m);
           const atual = m === referencia;
@@ -130,7 +131,9 @@ export function DemonstrativoMorador({
 }) {
   const acumula = d.situacao === 'acumula';
   return (
-    <article className="flex h-[133mm] flex-col gap-[2.6mm] overflow-hidden text-neutral-900">
+    // [&>*]:shrink-0: com a linha "Inclui:" o conteudo passava da meia folha e o flex encolhia a caixa dos
+    // quatro campos (overflow-hidden), cortando os valores. Agora nada encolhe; o espaco e mais justo.
+    <article className="flex h-[133mm] flex-col gap-[1.6mm] overflow-hidden text-neutral-900 [&>*]:shrink-0">
       <Marca titulo="Demonstrativo de consumo de gás" subtitulo={`Referência ${rotuloMes(referencia)}`} />
       <div className="grid grid-cols-[1fr_auto] gap-x-[4mm] gap-y-[0.8mm] text-[3.3mm]">
         <div>
@@ -191,6 +194,33 @@ export function DemonstrativoMorador({
       <div className="mt-auto">
         <Contato observacao={`Documento informativo, sem valor fiscal. Mínimo de cobrança ${formatarMoeda(minimo)}: abaixo dele o consumo acumula para o mês seguinte.`} />
       </div>
+    </article>
+  );
+}
+
+// Comunicado do primeiro mes impresso (caixa "Incluir comunicado", E9): meia A4, mesmo texto do e-mail.
+export function ComunicadoMorador({ minimo, condominio, unidade }: { minimo: number; condominio: string; unidade: string }) {
+  const t = textoComunicado(minimo);
+  return (
+    <article className="flex h-[133mm] flex-col gap-[2.6mm] overflow-hidden text-[3.5mm] leading-relaxed text-neutral-900">
+      <Marca titulo={t.titulo} subtitulo={`${condominio} · ${unidade}`} />
+      <p className="mt-[1mm]">{t.saudacao}</p>
+      <div>
+        <p>{t.abertura}</p>
+        <ul className="mt-[1mm] list-disc pl-[6mm]">
+          {t.itens.map((i) => (
+            <li key={i}>{i}</li>
+          ))}
+        </ul>
+      </div>
+      {t.depois.map((p) => (
+        <p key={p}>{p}</p>
+      ))}
+      <p className="mt-auto">
+        Atenciosamente,
+        <br />
+        {t.assinatura}
+      </p>
     </article>
   );
 }
