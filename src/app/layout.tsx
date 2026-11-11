@@ -1,28 +1,38 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Maven_Pro } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 // Corpo em IBM Plex Sans; documentos e codigos (CPF/CNPJ, codigos legados) em
 // IBM Plex Mono — classe `font-mono`. (Mesmo visual do LiberAi Cadastros.)
-const plexSans = IBM_Plex_Sans({
+// Arquivos locais (subset latin, licenca OFL) em ./fonts, para o build nao
+// depender do Google Fonts. Sans e Maven Pro sao variaveis: um unico arquivo
+// cobre a faixa de pesos.
+const plexSans = localFont({
   variable: "--font-ibm-plex-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  src: "./fonts/IBMPlexSans-Variable-latin.woff2",
+  weight: "400 600",
+  style: "normal",
+  display: "swap",
 });
 
 // Titulos e marca em Maven Pro, a fonte do logotipo no manual da marca.
-const mavenPro = Maven_Pro({
+const mavenPro = localFont({
   variable: "--font-maven-pro",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  src: "./fonts/MavenPro-Variable-latin.woff2",
+  weight: "500 700",
+  style: "normal",
+  display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
+const plexMono = localFont({
   variable: "--font-ibm-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
+  src: [
+    { path: "./fonts/IBMPlexMono-Regular-latin.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/IBMPlexMono-Medium-latin.woff2", weight: "500", style: "normal" },
+  ],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
